@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Webview Ultra</title>
     <style>
-        /* 既存のCSSは変更なし */
+        
         * {
             margin: 0;
             padding: 0;
@@ -158,7 +158,7 @@
     </style>
 </head>
 <body>
-    <!-- ログイン画面 -->
+
     <div class="container">
         <div class="login-section" id="loginSection">
             <h1>Webview Ultra</h1>
@@ -171,7 +171,7 @@
         <p class="bottom">Powerd by Toston</p>
     </div>
 
-    <!-- メインアプリ画面 -->
+
     <div class="app-section" id="appSection">
         <div class="webview-header">
             <h2>Webview Ultra<h> Powerd by Toston</h></h2>
@@ -191,7 +191,7 @@
         const CORRECT_PASSWORD = "toston";
         const TARGET_URL = "https://repiped.wireway.ch/";
         
-        // 全画面表示を要求する関数
+
         function requestFullscreen() {
             const element = document.documentElement;
             
@@ -204,7 +204,7 @@
             }
         }
         
-        // ユーザーエージェント設定
+
         function setUserAgent() {
             const iframe = document.getElementById('webview');
             const userAgents = [
@@ -216,7 +216,7 @@
             iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox');
         }
         
-        // 人間らしい遅延
+
         function humanizedLoad() {
             const iframe = document.getElementById('webview');
             const delay = 1000 + Math.random() * 2000;
@@ -227,7 +227,7 @@
             }, delay);
         }
         
-        // マウス動作の模倣
+
         function simulateHumanBehavior() {
             let moves = 0;
             const maxMoves = 3 + Math.floor(Math.random() * 5);
@@ -278,7 +278,7 @@
             document.getElementById('errorSection').style.display = 'none';
             document.getElementById('webview').style.display = 'none';
             
-            // アプリ画面表示時に全画面モードを要求
+
             requestFullscreen();
             
             setUserAgent();
@@ -302,7 +302,7 @@
         }
         
         function logout() {
-            // 全画面モードを終了
+
             if (document.exitFullscreen) {
                 document.exitFullscreen();
             } else if (document.webkitExitFullscreen) { /* Safari */
@@ -319,12 +319,12 @@
             document.getElementById('password').focus();
         }
         
-        // 初期設定
+
         document.getElementById('password').focus();
         
-        // ページ読み込み時に全画面モードを要求
+
         window.addEventListener('load', function() {
-            // ユーザーインタラクション後に全画面モードを要求するための準備
+
             document.addEventListener('click', function initialFullscreen() {
                 requestFullscreen();
                 document.removeEventListener('click', initialFullscreen);
