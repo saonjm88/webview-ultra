@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webview Ultra</title>
+    <style>
+        /* 既存のCSSは変更なし */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 400px;
+            overflow: hidden;
+        }
+        
+        .login-section {
+            padding: 50px 30px;
+        }
+        
+        .app-section {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+            background: white;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 30px;
+        }
+        
+        .input-group {
+            margin-bottom: 25px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e1e1;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .error {
+            color: #e74c3c;
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .webview-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 5px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+        
+        .webview-header h {
+            font-size: 13px;
+        }
+
+        .webview-header h2 {
+            font-size: 20px;
+            font-weight: 400px;
+        }
+
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            width: auto;
+        }
+        
+        iframe {
+            flex: 1;
+            border: none;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .error-section {
+            display: none;
+            padding: 40px 20px;
+            text-align: center;
+            background: white;
+        }
+        
+        .retry-btn {
+            margin-top: 20px;
+            background: #667eea;
+        }
+
+        .bottom {
+            text-align: center;
+            color: #666;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- ログイン画面 -->
+    <div class="container">
+        <div class="login-section" id="loginSection">
+            <h1>Webview Ultra</h1>
+            <div class="input-group">
+                <input type="password" id="password" placeholder="Enter password" onkeypress="handleKeyPress(event)">
+            </div>
+            <button onclick="checkPassword()">LOGIN</button>
+            <div class="error" id="errorMessage">The password is incorrect</div>
+        </div>
+        <p class="bottom">Powerd by Toston</p>
+    </div>
+
+    <!-- メインアプリ画面 -->
+    <div class="app-section" id="appSection">
+        <div class="webview-header">
+            <h2>Webview Ultra<h> powerd by Toston</h></h2>
+            <button class="logout-btn" onclick="logout()">LOGOUT</button>
+        </div>
+        <div class="loading" id="loadingMessage">Loading...</div>
+        <iframe id="webview" src="" onload="hideLoading()" onerror="showError()"></iframe>
+        <div class="error-section" id="errorSection">
+            <h3>Connection error</h3>
+            <p>Unable to connect to the site</p>
+            <p>Please check your internet connection</p>
+            <button class="retry-btn" onclick="retryLoad()">Retry</button>
+        </div>
+    </div>
+
+    <script>
+        const CORRECT_PASSWORD = "toston";
+        const TARGET_URL = "https://repiped.wireway.ch/";
+        
+        // 全画面表示を要求する関数
+        function requestFullscreen() {
+            const element = document.documentElement;
+            
+            if (element.requestFullscreen) {
+                element.requestFullscreen();
+            } else if (element.webkitRequestFullscreen) { /* Safari */
+                element.webkitRequestFullscreen();
+            } else if (element.msRequestFullscreen) { /* IE11 */
+                element.msRequestFullscreen();
+            }
+        }
+        
+        // ユーザーエージェント設定
+        function setUserAgent() {
+            const iframe = document.getElementById('webview');
+            const userAgents = [
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            ];
+            
+            const randomAgent = userAgents[Math.floor(Math.random() * userAgents.length)];
+            iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox');
+        }
+        
+        // 人間らしい遅延
+        function humanizedLoad() {
+            const iframe = document.getElementById('webview');
+            const delay = 1000 + Math.random() * 2000;
+            
+            setTimeout(() => {
+                const timestamp = new Date().getTime();
+                iframe.src = TARGET_URL + '?t=' + timestamp;
+            }, delay);
+        }
+        
+        // マウス動作の模倣
+        function simulateHumanBehavior() {
+            let moves = 0;
+            const maxMoves = 3 + Math.floor(Math.random() * 5);
+            
+            const moveInterval = setInterval(() => {
+                if (moves >= maxMoves) {
+                    clearInterval(moveInterval);
+                    return;
+                }
+                
+                const x = 100 + Math.random() * (window.innerWidth - 200);
+                const y = 100 + Math.random() * (window.innerHeight - 200);
+                
+                document.dispatchEvent(new MouseEvent('mousemove', {
+                    clientX: x,
+                    clientY: y,
+                    bubbles: true
+                }));
+                
+                moves++;
+            }, 200 + Math.random() * 400);
+        }
+        
+        function checkPassword() {
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('errorMessage');
+            
+            if (password === CORRECT_PASSWORD) {
+                simulateHumanBehavior();
+                setTimeout(showApp, 800);
+            } else {
+                errorMessage.style.display = 'block';
+                document.getElementById('password').value = '';
+                document.getElementById('password').focus();
+            }
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                checkPassword();
+            }
+        }
+        
+        function showApp() {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('appSection').style.display = 'flex';
+            document.getElementById('loadingMessage').style.display = 'block';
+            document.getElementById('errorSection').style.display = 'none';
+            document.getElementById('webview').style.display = 'none';
+            
+            // アプリ画面表示時に全画面モードを要求
+            requestFullscreen();
+            
+            setUserAgent();
+            humanizedLoad();
+        }
+        
+        function hideLoading() {
+            document.getElementById('loadingMessage').style.display = 'none';
+            document.getElementById('webview').style.display = 'block';
+            document.getElementById('errorSection').style.display = 'none';
+        }
+        
+        function showError() {
+            document.getElementById('loadingMessage').style.display = 'none';
+            document.getElementById('webview').style.display = 'none';
+            document.getElementById('errorSection').style.display = 'block';
+        }
+        
+        function retryLoad() {
+            showApp();
+        }
+        
+        function logout() {
+            // 全画面モードを終了
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) { /* Safari */
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) { /* IE11 */
+                document.msExitFullscreen();
+            }
+            
+            document.getElementById('appSection').style.display = 'none';
+            document.getElementById('loginSection').style.display = 'block';
+            document.getElementById('password').value = '';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('webview').src = '';
+            document.getElementById('password').focus();
+        }
+        
+        // 初期設定
+        document.getElementById('password').focus();
+        
+        // ページ読み込み時に全画面モードを要求
+        window.addEventListener('load', function() {
+            // ユーザーインタラクション後に全画面モードを要求するための準備
+            document.addEventListener('click', function initialFullscreen() {
+                requestFullscreen();
+                document.removeEventListener('click', initialFullscreen);
+            });
+            
+            if (document.getElementById('appSection').style.display === 'flex') {
+                logout();
+            }
+        });
+    </script>
+</body>
+</html>
